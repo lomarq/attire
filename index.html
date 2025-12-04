@@ -45,8 +45,62 @@
             margin-left: 8px;
             object-fit: cover;
         }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            gap: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        .modal-close {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: #1a1a1a;
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .modal-image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .modal-image {
+            max-width: 40vw;
+            max-height: 80vh;
+            object-fit: contain;
+        }
     </style>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-brand-secondary">
     
@@ -85,9 +139,6 @@
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <h1 class="text-2xl font-bold tracking-wider">Elegant Attire for Gentleman</h1>
                 <div>
-                    <button id="admin-login-button" class="px-4 py-2 text-sm font-medium text-brand-primary bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-primary focus:ring-white transition duration-300">
-                        Admin Login
-                    </button>
                     <button id="logout-button" class="hidden px-4 py-2 text-sm font-medium text-brand-primary bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-primary focus:ring-white transition duration-300">
                         Logout
                     </button>
@@ -150,9 +201,11 @@
                             </div>
                         </div>
                         <div class="flex justify-between items-center pt-4">
-                            <!-- Empty div for spacing/layout balance -->
-                            <div></div>
-                            <!-- Cancel/Submit buttons (right aligned) -->
+                             <div>
+                                <button id="delete-item-button" type="button" class="hidden px-6 py-2 font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-300">
+                                    Delete Item
+                                </button>
+                            </div>
                             <div class="flex gap-4">
                                 <button id="cancel-edit-button" type="button" class="hidden px-6 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-300">
                                     Cancel
@@ -237,10 +290,26 @@
         </main>
     </div>
 
+    <!-- Image Modal -->
+    <div id="image-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span id="modal-close-button" class="modal-close">&times;</span>
+            <div class="modal-image-container">
+                 <h4 class="text-lg font-bold mb-2">Product</h4>
+                <img id="modal-product-image" src="" alt="Product Image" class="modal-image">
+            </div>
+            <div class="modal-image-container">
+                <h4 class="text-lg font-bold mb-2">Fabric Detail</h4>
+                <img id="modal-fabric-image" src="" alt="Fabric Image" class="modal-image">
+            </div>
+        </div>
+    </div>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
     // --- DATA & STATE ---
-    const PASSWORD_STORAGE_key = 'modern_attire_admin_password';
+    const PASSWORD_STORAGE_key = 'elegant_attire_admin_password';
     const DEFAULT_PASSWORD = 'password123';
 
     const initializePassword = () => {
@@ -257,6 +326,7 @@
         Shoes: 'Shoes',
     };
 
+    // Use a let binding for products so we can reassign it with immutable updates
     let products = [
         { id: 1, name: 'Classic Navy Blazer', brand: 'Prestige Wear', category: Category.SuitJackets, size: '40R', color: 'Navy', fabric: 'Wool', imageUrl: 'https://picsum.photos/seed/jacket1/600/800', fabricImageUrl: 'https://picsum.photos/seed/wool/50/50' },
         { id: 2, name: 'Slim Fit Chinos', brand: 'Urban Threads', category: Category.Pants, size: '32x32', color: 'Khaki', fabric: 'Cotton Twill', imageUrl: 'https://picsum.photos/seed/pants1/600/800', fabricImageUrl: 'https://picsum.photos/seed/twill/50/50' },
@@ -282,7 +352,6 @@
     const passwordInput = document.getElementById('password-input');
     const loginError = document.getElementById('login-error');
     const logoutButton = document.getElementById('logout-button');
-    const adminLoginButton = document.getElementById('admin-login-button');
     const productGrid = document.getElementById('product-grid');
     const categoryList = document.getElementById('category-list');
     const toggleFormButton = document.getElementById('toggle-form-button');
@@ -293,6 +362,7 @@
     const formSubmitButton = document.getElementById('form-submit-button');
     const productIdInput = document.getElementById('product-id-input');
     const cancelEditButton = document.getElementById('cancel-edit-button');
+    const deleteItemButton = document.getElementById('delete-item-button');
     const togglePasswordFormButton = document.getElementById('toggle-password-form-button');
     const changePasswordFormContainer = document.getElementById('change-password-form-container');
     const changePasswordForm = document.getElementById('change-password-form');
@@ -300,12 +370,42 @@
     const searchInput = document.getElementById('search-input');
     const adminInventorySection = document.getElementById('admin-inventory-section');
     const adminInventoryBody = document.getElementById('admin-inventory-body');
+    const imageModal = document.getElementById('image-modal');
+    const modalCloseButton = document.getElementById('modal-close-button');
+    const modalProductImage = document.getElementById('modal-product-image');
+    const modalFabricImage = document.getElementById('modal-fabric-image');
 
-    // --- RENDER FUNCTIONS ---
+    // --- RENDER FUNCTIONS (UI LOGIC) ---
     
+    // Master function to update the entire UI based on the current state
+    const updateUI = () => {
+        // Determine visibility of main views
+        if (isLoggedIn) {
+            loginView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            adminPanel.classList.remove('hidden');
+            adminInventorySection.classList.remove('hidden');
+            logoutButton.classList.remove('hidden');
+        } else {
+            appView.classList.remove('hidden');
+            loginView.classList.add('hidden');
+            adminPanel.classList.add('hidden');
+            adminInventorySection.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+        }
+
+        // Re-render all dynamic components
+        renderCategories();
+        renderCustomerGrid();
+        if (isLoggedIn) {
+            renderAdminTable();
+        }
+    };
+
     const renderCustomerGrid = () => {
         productGrid.innerHTML = '';
 
+        // Filter logic remains the same
         const categoryFilteredProducts = selectedCategory === 'All'
             ? products
             : products.filter(p => p.category === selectedCategory);
@@ -325,7 +425,7 @@
             finalFilteredProducts.forEach(product => {
                 const productCardHTML = `
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-2xl group">
-                        <div class="relative">
+                        <div class="relative product-image-container cursor-pointer" data-id="${product.id}">
                             <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-80 object-cover" />
                             <div class="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
                             <span class="absolute top-3 right-3 bg-brand-accent text-white text-xs font-bold px-2 py-1 rounded-full">${product.category}</span>
@@ -349,6 +449,7 @@
     const renderAdminTable = () => {
         adminInventoryBody.innerHTML = '';
         
+        // Use the same search filtering as the customer grid for consistency
         const filteredForAdmin = searchTerm.trim() === ''
             ? products
             : products.filter(p =>
@@ -433,34 +534,7 @@
         });
     };
 
-    const updateUI = () => {
-        // --- 1. Update visibility based on login state ---
-        if (isLoggedIn) {
-            loginView.classList.add('hidden');
-            appView.classList.remove('hidden');
-            adminPanel.classList.remove('hidden');
-            adminInventorySection.classList.remove('hidden');
-            logoutButton.classList.remove('hidden');
-            adminLoginButton.classList.add('hidden');
-        } else {
-            appView.classList.remove('hidden');
-            loginView.classList.add('hidden');
-            adminPanel.classList.add('hidden');
-            adminInventorySection.classList.add('hidden');
-            logoutButton.classList.add('hidden');
-            adminLoginButton.classList.remove('hidden');
-        }
-
-        // --- 2. Re-render all dynamic components ---
-        renderCategories();
-        renderCustomerGrid();
-        if (isLoggedIn) {
-            renderAdminTable();
-        }
-    };
-
-
-    // --- FORM & EDITING/DELETING LOGIC ---
+    // --- DATA HANDLING (STATE LOGIC) ---
     
     const resetForm = () => {
         addItemForm.reset();
@@ -469,6 +543,7 @@
         formTitle.textContent = 'Add New Item';
         formSubmitButton.textContent = 'Add Product';
         cancelEditButton.classList.add('hidden');
+        deleteItemButton.classList.add('hidden');
     };
 
     const startEditing = (productId) => {
@@ -478,6 +553,7 @@
         editingProductId = productId;
         productIdInput.value = productToEdit.id;
         
+        // Populate form fields
         const form = addItemForm;
         form.elements['name'].value = productToEdit.name;
         form.elements['brand'].value = productToEdit.brand;
@@ -488,33 +564,33 @@
         form.elements['size'].value = productToEdit.size;
         form.elements['color'].value = productToEdit.color;
 
+        // Update form UI for editing mode
         formTitle.textContent = 'Edit Item';
         formSubmitButton.textContent = 'Save Changes';
         cancelEditButton.classList.remove('hidden');
+        deleteItemButton.classList.remove('hidden'); // Show delete button in edit mode
         toggleFormButton.textContent = 'Close Form';
         
+        // Show form and scroll to it
         addItemFormContainer.classList.remove('hidden');
         addItemFormContainer.scrollIntoView({ behavior: 'smooth' });
     };
     
     const handleDelete = (productId) => {
         const numericId = parseInt(productId, 10);
-        const productIndex = products.findIndex(p => p.id === numericId);
-
-        if (productIndex === -1) return; // Product not found
-
-        const productToDelete = products[productIndex];
+        const productToDelete = products.find(p => p.id === numericId);
+        if (!productToDelete) return;
 
         if (window.confirm(`Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`)) {
-            // Directly mutate the array
-            products.splice(productIndex, 1);
+            // Immutable update: create a new array without the deleted item
+            products = products.filter(p => p.id !== numericId);
             
             // If the deleted item was being edited, close the form
             if (editingProductId === numericId) {
-                handleToggleForm();
+                handleToggleForm(); // Resets and hides the form
             }
 
-            updateUI();
+            updateUI(); // Re-render the UI with the new products array
         }
     };
 
@@ -532,7 +608,7 @@
             isLoggedIn = true;
             passwordInput.value = '';
             loginError.textContent = '';
-            populateCategorySelect();
+            populateCategorySelect(); // Populate form dropdown only on login
             updateUI();
         } else {
             loginError.textContent = 'Invalid password. Please try again.';
@@ -542,6 +618,7 @@
 
     const handleLogout = () => {
         isLoggedIn = false;
+        // Close any open admin forms upon logout
         if (!addItemFormContainer.classList.contains('hidden')) {
             handleToggleForm();
         }
@@ -557,7 +634,7 @@
         }
         const isHidden = addItemFormContainer.classList.contains('hidden');
         if (!isHidden) {
-            resetForm();
+            resetForm(); // Reset form when closing
         }
         addItemFormContainer.classList.toggle('hidden');
         toggleFormButton.textContent = isHidden ? 'Close Form' : 'Add New Item';
@@ -598,16 +675,16 @@
         };
 
         if (editingProductId) {
-            const productIndex = products.findIndex(p => p.id === editingProductId);
-            if (productIndex > -1) {
-                products[productIndex] = { ...products[productIndex], ...productData };
-            }
+            // Immutable update for editing an item
+            products = products.map(p => 
+                p.id === editingProductId 
+                    ? { ...p, ...productData } 
+                    : p
+            );
         } else {
-            const newProduct = {
-                id: Date.now(),
-                ...productData,
-            };
-            products.unshift(newProduct);
+            // Immutable update for adding a new item
+            const newProduct = { id: Date.now(), ...productData };
+            products = [newProduct, ...products];
         }
 
         resetForm();
@@ -659,19 +736,48 @@
         updateUI();
     };
 
+    const openImageModal = (productId) => {
+        const product = products.find(p => p.id === productId);
+        if (product) {
+            modalProductImage.src = product.imageUrl;
+            modalFabricImage.src = product.fabricImageUrl;
+            imageModal.classList.add('visible');
+        }
+    };
+
+    const closeImageModal = () => {
+        imageModal.classList.remove('visible');
+    };
+
+    const handleAdminShortcut = (e) => {
+        // Ctrl+Shift+A or Cmd+Shift+A
+        if (e.key === 'A' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault(); // Prevent browser's default action
+            if (!isLoggedIn) {
+                handleShowLogin();
+            }
+        }
+    };
+
+
     // --- INITIALIZATION & EVENT LISTENERS ---
+    
+    // Set up the initial state of the application
     initializePassword();
 
+    // Attach all event listeners
     loginForm.addEventListener('submit', handleLogin);
-    adminLoginButton.addEventListener('click', handleShowLogin);
     logoutButton.addEventListener('click', handleLogout);
     toggleFormButton.addEventListener('click', handleToggleForm);
     addItemForm.addEventListener('submit', handleFormSubmit);
     cancelEditButton.addEventListener('click', handleToggleForm);
+    deleteItemButton.addEventListener('click', () => handleDelete(editingProductId)); // Pass current editing ID
     togglePasswordFormButton.addEventListener('click', handleTogglePasswordForm);
     changePasswordForm.addEventListener('submit', handleChangePassword);
     searchInput.addEventListener('input', handleSearch);
+    document.addEventListener('keydown', handleAdminShortcut);
 
+    // Use event delegation for dynamically created elements
     adminInventoryBody.addEventListener('click', (e) => {
         const target = e.target;
         
@@ -689,9 +795,25 @@
         }
     });
 
+    productGrid.addEventListener('click', (e) => {
+        const imageContainer = e.target.closest('.product-image-container');
+        if (imageContainer) {
+            const id = parseInt(imageContainer.dataset.id, 10);
+            openImageModal(id);
+        }
+    });
+
+    modalCloseButton.addEventListener('click', closeImageModal);
+    imageModal.addEventListener('click', (e) => {
+        // Close if clicking on the overlay itself, not the content
+        if (e.target === imageModal) {
+            closeImageModal();
+        }
+    });
+
+    // Initial render of the application
     updateUI();
 });
     </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
