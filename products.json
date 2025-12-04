@@ -1,15 +1,14 @@
-
 [
   {
     "id": 1,
-    "name": "Classic Navy Blazer",
-    "brand": "Prestige Wear",
+    "name": "Classic Gray Suit Jacket",
+    "brand": "Lauren By Ralph Lauren",
     "category": "Suit Jackets",
     "size": "40R",
-    "color": "Navy",
+    "color": "Gray",
     "fabric": "Wool",
-    "imageUrl": "https://picsum.photos/seed/jacket1/600/800",
-    "fabricImageUrl": "https://picsum.photos/seed/wool/50/50"
+    "imageUrl": "https://res.cloudinary.com/dgmncrgec/image/upload/v1764884263/IMG_20251204_131747_edit_359510978805559_fkiuxr.jpg",
+    "fabricImageUrl": "https://res.cloudinary.com/dgmncrgec/image/upload/v1764884263/IMG_20251204_131800_edit_359474898776918_sviwwy.jpg"
   },
   {
     "id": 2,
