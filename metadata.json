@@ -1,0 +1,5 @@
+{
+  "name": "Suits",
+  "description": "A modern, standalone clothes catalog website with separate views for customers and an administrator. The admin can add new items, and customers can browse and filter the catalog. All data is managed within the application for simple deployment.",
+  "requestFramePermissions": []
+}

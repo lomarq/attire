@@ -1,0 +1,695 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Clothes Catalog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#1a1a1a',
+              'brand-secondary': '#f0f0f0',
+              'brand-accent': '#4f46e5',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        .form-container.hidden {
+            max-height: 0;
+            overflow: hidden;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+        .form-container {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+            opacity: 1;
+        }
+        .fabric-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-brand-secondary">
+    
+    <!-- Login View -->
+    <div id="login-view" class="hidden">
+        <div class="flex items-center justify-center min-h-screen bg-gray-100">
+            <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto text-brand-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <h1 class="text-3xl font-bold text-gray-900 mt-2">Admin Login</h1>
+                    <p class="text-gray-600">Access the catalog management panel</p>
+                </div>
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="password-input" class="sr-only">Password</label>
+                        <input id="password-input" type="password" placeholder="Password" required class="w-full px-4 py-3 text-lg text-gray-800 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent" />
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm text-center"></p>
+                    <div>
+                        <button type="submit" class="w-full px-4 py-3 font-semibold text-white bg-brand-accent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-accent transition duration-300">
+                            Sign In
+                        </button>
+                    </div>
+                    <p class="text-xs text-center text-gray-500">Default password: password123</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App View (Admin/Customer) -->
+    <div id="app-view" class="min-h-screen bg-gray-50 text-gray-800 font-sans">
+        <!-- Header -->
+        <header class="bg-brand-primary text-white shadow-lg">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold tracking-wider">Modern Attire</h1>
+                <div>
+                    <button id="admin-login-button" class="px-4 py-2 text-sm font-medium text-brand-primary bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-primary focus:ring-white transition duration-300">
+                        Admin Login
+                    </button>
+                    <button id="logout-button" class="hidden px-4 py-2 text-sm font-medium text-brand-primary bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-primary focus:ring-white transition duration-300">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8">
+            <!-- Admin Panel -->
+            <div id="admin-panel" class="bg-white p-6 rounded-lg shadow-md mb-8 hidden">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <h2 class="text-2xl font-bold text-brand-primary">Admin Panel</h2>
+                    <div class="flex gap-2">
+                        <button id="toggle-password-form-button" class="px-5 py-2 font-semibold text-white bg-gray-500 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-300">
+                            Change Password
+                        </button>
+                        <button id="toggle-form-button" class="px-5 py-2 font-semibold text-white bg-brand-accent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-accent transition duration-300">
+                            Add New Item
+                        </button>
+                    </div>
+                </div>
+                <div id="add-item-form-container" class="form-container hidden mt-6 border-t pt-6">
+                    <h3 id="form-title" class="text-xl font-bold text-gray-900 mb-6">Add New Item</h3>
+                    <form id="add-item-form" class="space-y-6">
+                        <input type="hidden" name="id" id="product-id-input">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                                <input name="name" type="text" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                                <input name="brand" type="text" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select name="category" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required>
+                                    <!-- Options will be populated by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fabric</label>
+                                <input name="fabric" type="text" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required />
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fabric Image URL</label>
+                                <input name="fabricImageUrl" type="url" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required placeholder="https://example.com/fabric.jpg" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                <input name="imageUrl" type="url" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required placeholder="https://example.com/image.jpg" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Size</label>
+                                <input name="size" type="text" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required placeholder="e.g. M, 40R, 10" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                                <input name="color" type="text" class="w-full px-3 py-2 text-gray-800 placeholder-gray-400 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:bg-white" required placeholder="e.g. Navy, Khaki" />
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pt-4">
+                            <!-- Empty div for spacing/layout balance -->
+                            <div></div>
+                            <!-- Cancel/Submit buttons (right aligned) -->
+                            <div class="flex gap-4">
+                                <button id="cancel-edit-button" type="button" class="hidden px-6 py-2 font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-300">
+                                    Cancel
+                                </button>
+                                <button id="form-submit-button" type="submit" class="px-6 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
+                                    Add Product
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="change-password-form-container" class="form-container hidden mt-6 border-t pt-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Change Admin Password</h3>
+                    <form id="change-password-form" class="space-y-4 max-w-md">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                            <input name="currentPassword" type="password" class="w-full px-3 py-2 text-gray-800 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <input name="newPassword" type="password" class="w-full px-3 py-2 text-gray-800 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <input name="confirmPassword" type="password" class="w-full px-3 py-2 text-gray-800 bg-gray-100 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent" required />
+                        </div>
+                        <p id="password-change-message" class="text-sm h-5"></p>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-6 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Admin Inventory Table -->
+                <div id="admin-inventory-section" class="hidden mt-8 border-t pt-6">
+                    <h3 class="text-xl font-bold text-brand-primary mb-4">Inventory Management</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-inventory-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rows will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Customer View -->
+            <div class="mt-2 pt-8">
+                <h2 class="text-3xl font-bold text-center text-brand-primary mb-4">Product Catalog</h2>
+                <div class="mb-8 max-w-2xl mx-auto">
+                    <input id="search-input" type="search" placeholder="Search by name, brand, fabric, color..." class="w-full px-4 py-3 text-lg text-gray-800 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent">
+                </div>
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- Category Filter -->
+                    <aside class="w-full md:w-1/4 lg:w-1/5">
+                        <div id="category-filter-container" class="p-6 bg-white rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 text-brand-primary border-b pb-2">Categories</h3>
+                            <ul id="category-list" class="space-y-2">
+                                <!-- Categories will be populated by JS -->
+                            </ul>
+                        </div>
+                    </aside>
+                    <!-- Product Grid -->
+                    <section class="w-full md:w-3/4 lg:w-4/5">
+                        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            <!-- Products will be populated by JS -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    // --- DATA & STATE ---
+    const PASSWORD_STORAGE_key = 'modern_attire_admin_password';
+    const DEFAULT_PASSWORD = 'password123';
+
+    const initializePassword = () => {
+        if (!localStorage.getItem(PASSWORD_STORAGE_key)) {
+            localStorage.setItem(PASSWORD_STORAGE_key, DEFAULT_PASSWORD);
+        }
+    };
+
+    const Category = {
+        SuitJackets: 'Suit Jackets',
+        Pants: 'Pants',
+        Shirts: 'Shirts',
+        Ties: 'Ties',
+        Shoes: 'Shoes',
+    };
+
+    let products = [
+        { id: 1, name: 'Classic Navy Blazer', brand: 'Prestige Wear', category: Category.SuitJackets, size: '40R', color: 'Navy', fabric: 'Wool', imageUrl: 'https://picsum.photos/seed/jacket1/600/800', fabricImageUrl: 'https://picsum.photos/seed/wool/50/50' },
+        { id: 2, name: 'Slim Fit Chinos', brand: 'Urban Threads', category: Category.Pants, size: '32x32', color: 'Khaki', fabric: 'Cotton Twill', imageUrl: 'https://picsum.photos/seed/pants1/600/800', fabricImageUrl: 'https://picsum.photos/seed/twill/50/50' },
+        { id: 3, name: 'Oxford Button-Down', brand: 'Gentleman\'s Choice', category: Category.Shirts, size: 'M', color: 'White', fabric: 'Oxford Cotton', imageUrl: 'https://picsum.photos/seed/shirt1/600/800', fabricImageUrl: 'https://picsum.photos/seed/oxford/50/50' },
+        { id: 4, name: 'Leather Wingtip Oxfords', brand: 'Walk London', category: Category.Shoes, size: '10', color: 'Brown', fabric: 'Full-grain Leather', imageUrl: 'https://picsum.photos/seed/shoes1/600/800', fabricImageUrl: 'https://picsum.photos/seed/leather/50/50' },
+        { id: 5, name: 'Silk Striped Tie', brand: 'Luxe Loom', category: Category.Ties, size: 'One Size', color: 'Red/Blue Stripe', fabric: 'Silk', imageUrl: 'https://picsum.photos/seed/tie1/600/800', fabricImageUrl: 'https://picsum.photos/seed/silk/50/50' },
+        { id: 6, name: 'Tweed Sport Coat', brand: 'Country Squire', category: Category.SuitJackets, size: '42R', color: 'Brown Herringbone', fabric: 'Wool Tweed', imageUrl: 'https://picsum.photos/seed/jacket2/600/800', fabricImageUrl: 'https://picsum.photos/seed/tweed/50/50' },
+        { id: 7, name: 'Wool Flannel Trousers', brand: 'Prestige Wear', category: Category.Pants, size: '34x32', color: 'Grey', fabric: 'Wool Flannel', imageUrl: 'https://picsum.photos/seed/pants2/600/800', fabricImageUrl: 'https://picsum.photos/seed/flannel/50/50' },
+        { id: 8, name: 'Linen Casual Shirt', brand: 'Urban Threads', category: Category.Shirts, size: 'L', color: 'Natural', fabric: 'Linen', imageUrl: 'https://picsum.photos/seed/shirt2/600/800', fabricImageUrl: 'https://picsum.photos/seed/linen/50/50' },
+    ];
+
+    let isLoggedIn = false;
+    let selectedCategory = 'All';
+    let editingProductId = null;
+    let searchTerm = '';
+
+
+    // --- DOM ELEMENTS ---
+    const loginView = document.getElementById('login-view');
+    const appView = document.getElementById('app-view');
+    const adminPanel = document.getElementById('admin-panel');
+    const loginForm = document.getElementById('login-form');
+    const passwordInput = document.getElementById('password-input');
+    const loginError = document.getElementById('login-error');
+    const logoutButton = document.getElementById('logout-button');
+    const adminLoginButton = document.getElementById('admin-login-button');
+    const productGrid = document.getElementById('product-grid');
+    const categoryList = document.getElementById('category-list');
+    const toggleFormButton = document.getElementById('toggle-form-button');
+    const addItemFormContainer = document.getElementById('add-item-form-container');
+    const addItemForm = document.getElementById('add-item-form');
+    const categorySelect = document.querySelector('select[name="category"]');
+    const formTitle = document.getElementById('form-title');
+    const formSubmitButton = document.getElementById('form-submit-button');
+    const productIdInput = document.getElementById('product-id-input');
+    const cancelEditButton = document.getElementById('cancel-edit-button');
+    const togglePasswordFormButton = document.getElementById('toggle-password-form-button');
+    const changePasswordFormContainer = document.getElementById('change-password-form-container');
+    const changePasswordForm = document.getElementById('change-password-form');
+    const passwordChangeMessage = document.getElementById('password-change-message');
+    const searchInput = document.getElementById('search-input');
+    const adminInventorySection = document.getElementById('admin-inventory-section');
+    const adminInventoryBody = document.getElementById('admin-inventory-body');
+
+    // --- RENDER FUNCTIONS ---
+    
+    const renderCustomerGrid = () => {
+        productGrid.innerHTML = '';
+
+        const categoryFilteredProducts = selectedCategory === 'All'
+            ? products
+            : products.filter(p => p.category === selectedCategory);
+        
+        const finalFilteredProducts = searchTerm.trim() === ''
+            ? categoryFilteredProducts
+            : categoryFilteredProducts.filter(p =>
+                p.name.toLowerCase().includes(searchTerm) ||
+                p.brand.toLowerCase().includes(searchTerm) ||
+                p.fabric.toLowerCase().includes(searchTerm) ||
+                p.color.toLowerCase().includes(searchTerm)
+            );
+
+        if (finalFilteredProducts.length === 0) {
+            productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">No items found.</div>`;
+        } else {
+            finalFilteredProducts.forEach(product => {
+                const productCardHTML = `
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-2xl group">
+                        <div class="relative">
+                            <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-80 object-cover" />
+                            <div class="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                            <span class="absolute top-3 right-3 bg-brand-accent text-white text-xs font-bold px-2 py-1 rounded-full">${product.category}</span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-xl font-bold text-brand-primary mb-2 truncate">${product.name}</h3>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <p><span class="font-semibold">Brand:</span> ${product.brand}</p>
+                                <p class="flex items-center"><span class="font-semibold">Fabric:</span> <span class="ml-1">${product.fabric}</span><img src="${product.fabricImageUrl}" alt="${product.fabric} swatch" class="fabric-swatch"></p>
+                                <p><span class="font-semibold">Color:</span> ${product.color}</p>
+                                <p><span class="font-semibold">Size:</span> ${product.size}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                productGrid.insertAdjacentHTML('beforeend', productCardHTML);
+            });
+        }
+    };
+    
+    const renderAdminTable = () => {
+        adminInventoryBody.innerHTML = '';
+        
+        const filteredForAdmin = searchTerm.trim() === ''
+            ? products
+            : products.filter(p =>
+                p.name.toLowerCase().includes(searchTerm) ||
+                p.brand.toLowerCase().includes(searchTerm) ||
+                p.fabric.toLowerCase().includes(searchTerm) ||
+                p.color.toLowerCase().includes(searchTerm)
+            );
+
+        if (filteredForAdmin.length === 0) {
+            adminInventoryBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No items found.</td></tr>`;
+            return;
+        }
+
+        filteredForAdmin.forEach(product => {
+            const rowHTML = `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0">
+                                <img class="h-10 w-10 rounded-full object-cover" src="${product.imageUrl}" alt="${product.name}">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${product.category}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            ${product.brand}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button data-id="${product.id}" class="admin-edit-btn text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition-colors" title="Edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                        <button data-id="${product.id}" class="admin-delete-btn text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition-colors" title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            adminInventoryBody.insertAdjacentHTML('beforeend', rowHTML);
+        });
+    }
+
+    const renderCategories = () => {
+        categoryList.innerHTML = '';
+        const categories = ['All', ...Object.values(Category)];
+        categories.forEach(category => {
+            const li = document.createElement('li');
+            const button = document.createElement('button');
+            const isActive = selectedCategory === category;
+            
+            button.textContent = category;
+            button.className = `w-full text-left px-3 py-2 rounded-md transition-colors duration-200 text-base ${isActive ? 'bg-brand-accent text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
+            
+            button.addEventListener('click', () => {
+                selectedCategory = category;
+                updateUI();
+            });
+            
+            li.appendChild(button);
+            categoryList.appendChild(li);
+        });
+    };
+    
+    const populateCategorySelect = () => {
+        categorySelect.innerHTML = '';
+        Object.values(Category).forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+    };
+
+    const updateUI = () => {
+        // --- 1. Update visibility based on login state ---
+        if (isLoggedIn) {
+            loginView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            adminPanel.classList.remove('hidden');
+            adminInventorySection.classList.remove('hidden');
+            logoutButton.classList.remove('hidden');
+            adminLoginButton.classList.add('hidden');
+        } else {
+            appView.classList.remove('hidden');
+            loginView.classList.add('hidden');
+            adminPanel.classList.add('hidden');
+            adminInventorySection.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+            adminLoginButton.classList.remove('hidden');
+        }
+
+        // --- 2. Re-render all dynamic components ---
+        renderCategories();
+        renderCustomerGrid();
+        if (isLoggedIn) {
+            renderAdminTable();
+        }
+    };
+
+
+    // --- FORM & EDITING/DELETING LOGIC ---
+    
+    const resetForm = () => {
+        addItemForm.reset();
+        editingProductId = null;
+        productIdInput.value = '';
+        formTitle.textContent = 'Add New Item';
+        formSubmitButton.textContent = 'Add Product';
+        cancelEditButton.classList.add('hidden');
+    };
+
+    const startEditing = (productId) => {
+        const productToEdit = products.find(p => p.id === productId);
+        if (!productToEdit) return;
+
+        editingProductId = productId;
+        productIdInput.value = productToEdit.id;
+        
+        const form = addItemForm;
+        form.elements['name'].value = productToEdit.name;
+        form.elements['brand'].value = productToEdit.brand;
+        form.elements['category'].value = productToEdit.category;
+        form.elements['fabric'].value = productToEdit.fabric;
+        form.elements['fabricImageUrl'].value = productToEdit.fabricImageUrl;
+        form.elements['imageUrl'].value = productToEdit.imageUrl;
+        form.elements['size'].value = productToEdit.size;
+        form.elements['color'].value = productToEdit.color;
+
+        formTitle.textContent = 'Edit Item';
+        formSubmitButton.textContent = 'Save Changes';
+        cancelEditButton.classList.remove('hidden');
+        toggleFormButton.textContent = 'Close Form';
+        
+        addItemFormContainer.classList.remove('hidden');
+        addItemFormContainer.scrollIntoView({ behavior: 'smooth' });
+    };
+    
+    const handleDelete = (productId) => {
+        const numericId = parseInt(productId, 10);
+        const productIndex = products.findIndex(p => p.id === numericId);
+
+        if (productIndex === -1) return; // Product not found
+
+        const productToDelete = products[productIndex];
+
+        if (window.confirm(`Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`)) {
+            // Directly mutate the array
+            products.splice(productIndex, 1);
+            
+            // If the deleted item was being edited, close the form
+            if (editingProductId === numericId) {
+                handleToggleForm();
+            }
+
+            updateUI();
+        }
+    };
+
+    // --- EVENT HANDLERS ---
+
+    const handleShowLogin = () => {
+        appView.classList.add('hidden');
+        loginView.classList.remove('hidden');
+    };
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        const storedPassword = localStorage.getItem(PASSWORD_STORAGE_key);
+        if (passwordInput.value === storedPassword) {
+            isLoggedIn = true;
+            passwordInput.value = '';
+            loginError.textContent = '';
+            populateCategorySelect();
+            updateUI();
+        } else {
+            loginError.textContent = 'Invalid password. Please try again.';
+            passwordInput.value = '';
+        }
+    };
+
+    const handleLogout = () => {
+        isLoggedIn = false;
+        if (!addItemFormContainer.classList.contains('hidden')) {
+            handleToggleForm();
+        }
+        if (!changePasswordFormContainer.classList.contains('hidden')) {
+            handleTogglePasswordForm();
+        }
+        updateUI();
+    };
+    
+    const handleToggleForm = () => {
+        if (!changePasswordFormContainer.classList.contains('hidden')) {
+            handleTogglePasswordForm();
+        }
+        const isHidden = addItemFormContainer.classList.contains('hidden');
+        if (!isHidden) {
+            resetForm();
+        }
+        addItemFormContainer.classList.toggle('hidden');
+        toggleFormButton.textContent = isHidden ? 'Close Form' : 'Add New Item';
+    };
+
+    const handleTogglePasswordForm = () => {
+        if (!addItemFormContainer.classList.contains('hidden')) {
+            handleToggleForm();
+        }
+        const isHidden = changePasswordFormContainer.classList.contains('hidden');
+        if (!isHidden) {
+            changePasswordForm.reset();
+            passwordChangeMessage.textContent = '';
+            passwordChangeMessage.className = 'text-sm h-5';
+        }
+        changePasswordFormContainer.classList.toggle('hidden');
+        togglePasswordFormButton.textContent = isHidden ? 'Close Form' : 'Change Password';
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        
+        const actionType = editingProductId ? "save changes to this item" : "add this new item";
+        if (!window.confirm(`Are you sure you want to ${actionType}?`)) {
+            return;
+        }
+
+        const formData = new FormData(addItemForm);
+        const productData = {
+            name: formData.get('name').toString(),
+            brand: formData.get('brand').toString(),
+            category: formData.get('category').toString(),
+            size: formData.get('size').toString(),
+            color: formData.get('color').toString(),
+            fabric: formData.get('fabric').toString(),
+            imageUrl: formData.get('imageUrl').toString(),
+            fabricImageUrl: formData.get('fabricImageUrl').toString(),
+        };
+
+        if (editingProductId) {
+            const productIndex = products.findIndex(p => p.id === editingProductId);
+            if (productIndex > -1) {
+                products[productIndex] = { ...products[productIndex], ...productData };
+            }
+        } else {
+            const newProduct = {
+                id: Date.now(),
+                ...productData,
+            };
+            products.unshift(newProduct);
+        }
+
+        resetForm();
+        addItemFormContainer.classList.add('hidden');
+        toggleFormButton.textContent = 'Add New Item';
+        updateUI();
+    };
+
+    const handleChangePassword = (e) => {
+        e.preventDefault();
+        passwordChangeMessage.textContent = '';
+        passwordChangeMessage.className = 'text-sm h-5';
+        
+        const formData = new FormData(changePasswordForm);
+        const currentPassword = formData.get('currentPassword').toString();
+        const newPassword = formData.get('newPassword').toString();
+        const confirmPassword = formData.get('confirmPassword').toString();
+        const storedPassword = localStorage.getItem(PASSWORD_STORAGE_key);
+
+        if (currentPassword !== storedPassword) {
+            passwordChangeMessage.textContent = 'Current password is incorrect.';
+            passwordChangeMessage.classList.add('text-red-500');
+            return;
+        }
+
+        if (!newPassword || newPassword.length < 6) {
+            passwordChangeMessage.textContent = 'New password must be at least 6 characters long.';
+            passwordChangeMessage.classList.add('text-red-500');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            passwordChangeMessage.textContent = 'New passwords do not match.';
+            passwordChangeMessage.classList.add('text-red-500');
+            return;
+        }
+        
+        localStorage.setItem(PASSWORD_STORAGE_key, newPassword);
+        passwordChangeMessage.textContent = 'Password updated successfully!';
+        passwordChangeMessage.classList.add('text-green-600');
+        
+        setTimeout(() => {
+            handleTogglePasswordForm();
+        }, 2000);
+    };
+
+    const handleSearch = (e) => {
+        searchTerm = e.target.value.toLowerCase();
+        updateUI();
+    };
+
+    // --- INITIALIZATION & EVENT LISTENERS ---
+    initializePassword();
+
+    loginForm.addEventListener('submit', handleLogin);
+    adminLoginButton.addEventListener('click', handleShowLogin);
+    logoutButton.addEventListener('click', handleLogout);
+    toggleFormButton.addEventListener('click', handleToggleForm);
+    addItemForm.addEventListener('submit', handleFormSubmit);
+    cancelEditButton.addEventListener('click', handleToggleForm);
+    togglePasswordFormButton.addEventListener('click', handleTogglePasswordForm);
+    changePasswordForm.addEventListener('submit', handleChangePassword);
+    searchInput.addEventListener('input', handleSearch);
+
+    adminInventoryBody.addEventListener('click', (e) => {
+        const target = e.target;
+        
+        const editBtn = target.closest('.admin-edit-btn');
+        if (editBtn) {
+            const id = parseInt(editBtn.dataset.id, 10);
+            startEditing(id);
+            return;
+        }
+
+        const deleteBtn = target.closest('.admin-delete-btn');
+        if (deleteBtn) {
+            const id = parseInt(deleteBtn.dataset.id, 10);
+            handleDelete(id);
+        }
+    });
+
+    updateUI();
+});
+    </script>
+</body>
+</html>
