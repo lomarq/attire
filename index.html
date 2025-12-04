@@ -151,7 +151,10 @@
             <div id="admin-panel" class="bg-white p-6 rounded-lg shadow-md mb-8 hidden">
                 <div class="flex justify-between items-center flex-wrap gap-4">
                     <h2 class="text-2xl font-bold text-brand-primary">Admin Panel</h2>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
+                         <button id="download-db-button" class="px-5 py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                            Download Database
+                        </button>
                         <button id="toggle-password-form-button" class="px-5 py-2 font-semibold text-white bg-gray-500 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-300">
                             Change Password
                         </button>
@@ -260,6 +263,15 @@
                         </table>
                     </div>
                 </div>
+                 <div id="admin-instructions" class="hidden mt-6 text-sm text-gray-600 bg-gray-100 p-4 rounded-md">
+                    <p class="font-bold">How to update the catalog permanently:</p>
+                    <ol class="list-decimal list-inside mt-2 space-y-1">
+                        <li>Make all your changes in the browser (add, edit, delete items).</li>
+                        <li>Click the "Download Database" button to save the updated <code class="bg-gray-200 px-1 rounded">products.json</code> file.</li>
+                        <li>In your project folder, replace the old <code class="bg-gray-200 px-1 rounded">products.json</code> with the new one you just downloaded.</li>
+                        <li>Commit and push the changes to your GitHub repository to make them live.</li>
+                    </ol>
+                </div>
 
             </div>
 
@@ -307,513 +319,408 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    // --- DATA & STATE ---
-    const PASSWORD_STORAGE_key = 'elegant_attire_admin_password';
-    const DEFAULT_PASSWORD = 'password123';
-
-    const initializePassword = () => {
-        if (!localStorage.getItem(PASSWORD_STORAGE_key)) {
-            localStorage.setItem(PASSWORD_STORAGE_key, DEFAULT_PASSWORD);
-        }
-    };
-
-    const Category = {
-        SuitJackets: 'Suit Jackets',
-        Pants: 'Pants',
-        Shirts: 'Shirts',
-        Ties: 'Ties',
-        Shoes: 'Shoes',
-    };
-
-    // Use a let binding for products so we can reassign it with immutable updates
-    let products = [
-        { id: 1, name: 'Classic Navy Blazer', brand: 'Prestige Wear', category: Category.SuitJackets, size: '40R', color: 'Navy', fabric: 'Wool', imageUrl: 'https://picsum.photos/seed/jacket1/600/800', fabricImageUrl: 'https://picsum.photos/seed/wool/50/50' },
-        { id: 2, name: 'Slim Fit Chinos', brand: 'Urban Threads', category: Category.Pants, size: '32x32', color: 'Khaki', fabric: 'Cotton Twill', imageUrl: 'https://picsum.photos/seed/pants1/600/800', fabricImageUrl: 'https://picsum.photos/seed/twill/50/50' },
-        { id: 3, name: 'Oxford Button-Down', brand: 'Gentleman\'s Choice', category: Category.Shirts, size: 'M', color: 'White', fabric: 'Oxford Cotton', imageUrl: 'https://picsum.photos/seed/shirt1/600/800', fabricImageUrl: 'https://picsum.photos/seed/oxford/50/50' },
-        { id: 4, name: 'Leather Wingtip Oxfords', brand: 'Walk London', category: Category.Shoes, size: '10', color: 'Brown', fabric: 'Full-grain Leather', imageUrl: 'https://picsum.photos/seed/shoes1/600/800', fabricImageUrl: 'https://picsum.photos/seed/leather/50/50' },
-        { id: 5, name: 'Silk Striped Tie', brand: 'Luxe Loom', category: Category.Ties, size: 'One Size', color: 'Red/Blue Stripe', fabric: 'Silk', imageUrl: 'https://picsum.photos/seed/tie1/600/800', fabricImageUrl: 'https://picsum.photos/seed/silk/50/50' },
-        { id: 6, name: 'Tweed Sport Coat', brand: 'Country Squire', category: Category.SuitJackets, size: '42R', color: 'Brown Herringbone', fabric: 'Wool Tweed', imageUrl: 'https://picsum.photos/seed/jacket2/600/800', fabricImageUrl: 'https://picsum.photos/seed/tweed/50/50' },
-        { id: 7, name: 'Wool Flannel Trousers', brand: 'Prestige Wear', category: Category.Pants, size: '34x32', color: 'Grey', fabric: 'Wool Flannel', imageUrl: 'https://picsum.photos/seed/pants2/600/800', fabricImageUrl: 'https://picsum.photos/seed/flannel/50/50' },
-        { id: 8, name: 'Linen Casual Shirt', brand: 'Urban Threads', category: Category.Shirts, size: 'L', color: 'Natural', fabric: 'Linen', imageUrl: 'https://picsum.photos/seed/shirt2/600/800', fabricImageUrl: 'https://picsum.photos/seed/linen/50/50' },
-    ];
-
-    let isLoggedIn = false;
-    let selectedCategory = 'All';
-    let editingProductId = null;
-    let searchTerm = '';
-
-
-    // --- DOM ELEMENTS ---
-    const loginView = document.getElementById('login-view');
-    const appView = document.getElementById('app-view');
-    const adminPanel = document.getElementById('admin-panel');
-    const loginForm = document.getElementById('login-form');
-    const passwordInput = document.getElementById('password-input');
-    const loginError = document.getElementById('login-error');
-    const logoutButton = document.getElementById('logout-button');
-    const productGrid = document.getElementById('product-grid');
-    const categoryList = document.getElementById('category-list');
-    const toggleFormButton = document.getElementById('toggle-form-button');
-    const addItemFormContainer = document.getElementById('add-item-form-container');
-    const addItemForm = document.getElementById('add-item-form');
-    const categorySelect = document.querySelector('select[name="category"]');
-    const formTitle = document.getElementById('form-title');
-    const formSubmitButton = document.getElementById('form-submit-button');
-    const productIdInput = document.getElementById('product-id-input');
-    const cancelEditButton = document.getElementById('cancel-edit-button');
-    const deleteItemButton = document.getElementById('delete-item-button');
-    const togglePasswordFormButton = document.getElementById('toggle-password-form-button');
-    const changePasswordFormContainer = document.getElementById('change-password-form-container');
-    const changePasswordForm = document.getElementById('change-password-form');
-    const passwordChangeMessage = document.getElementById('password-change-message');
-    const searchInput = document.getElementById('search-input');
-    const adminInventorySection = document.getElementById('admin-inventory-section');
-    const adminInventoryBody = document.getElementById('admin-inventory-body');
-    const imageModal = document.getElementById('image-modal');
-    const modalCloseButton = document.getElementById('modal-close-button');
-    const modalProductImage = document.getElementById('modal-product-image');
-    const modalFabricImage = document.getElementById('modal-fabric-image');
-
-    // --- RENDER FUNCTIONS (UI LOGIC) ---
-    
-    // Master function to update the entire UI based on the current state
-    const updateUI = () => {
-        // Determine visibility of main views
-        if (isLoggedIn) {
-            loginView.classList.add('hidden');
-            appView.classList.remove('hidden');
-            adminPanel.classList.remove('hidden');
-            adminInventorySection.classList.remove('hidden');
-            logoutButton.classList.remove('hidden');
-        } else {
-            appView.classList.remove('hidden');
-            loginView.classList.add('hidden');
-            adminPanel.classList.add('hidden');
-            adminInventorySection.classList.add('hidden');
-            logoutButton.classList.add('hidden');
-        }
-
-        // Re-render all dynamic components
-        renderCategories();
-        renderCustomerGrid();
-        if (isLoggedIn) {
-            renderAdminTable();
-        }
-    };
-
-    const renderCustomerGrid = () => {
-        productGrid.innerHTML = '';
-
-        // Filter logic remains the same
-        const categoryFilteredProducts = selectedCategory === 'All'
-            ? products
-            : products.filter(p => p.category === selectedCategory);
+    // --- APP INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', async () => {
         
-        const finalFilteredProducts = searchTerm.trim() === ''
-            ? categoryFilteredProducts
-            : categoryFilteredProducts.filter(p =>
-                p.name.toLowerCase().includes(searchTerm) ||
-                p.brand.toLowerCase().includes(searchTerm) ||
-                p.fabric.toLowerCase().includes(searchTerm) ||
-                p.color.toLowerCase().includes(searchTerm)
-            );
+        // --- DATA & STATE ---
+        const PASSWORD_STORAGE_KEY = 'elegant_attire_admin_password';
+        const DEFAULT_PASSWORD = 'password123';
 
-        if (finalFilteredProducts.length === 0) {
-            productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">No items found.</div>`;
-        } else {
-            finalFilteredProducts.forEach(product => {
-                const productCardHTML = `
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-2xl group">
-                        <div class="relative product-image-container cursor-pointer" data-id="${product.id}">
-                            <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-80 object-cover" />
-                            <div class="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
-                            <span class="absolute top-3 right-3 bg-brand-accent text-white text-xs font-bold px-2 py-1 rounded-full">${product.category}</span>
-                        </div>
-                        <div class="p-5">
-                            <h3 class="text-xl font-bold text-brand-primary mb-2 truncate">${product.name}</h3>
-                            <div class="space-y-2 text-sm text-gray-600">
-                                <p><span class="font-semibold">Brand:</span> ${product.brand}</p>
-                                <p class="flex items-center"><span class="font-semibold">Fabric:</span> <span class="ml-1">${product.fabric}</span><img src="${product.fabricImageUrl}" alt="${product.fabric} swatch" class="fabric-swatch"></p>
-                                <p><span class="font-semibold">Color:</span> ${product.color}</p>
-                                <p><span class="font-semibold">Size:</span> ${product.size}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                productGrid.insertAdjacentHTML('beforeend', productCardHTML);
-            });
-        }
-    };
-    
-    const renderAdminTable = () => {
-        adminInventoryBody.innerHTML = '';
+        const Category = {
+            SuitJackets: 'Suit Jackets',
+            Pants: 'Pants',
+            Shirts: 'Shirts',
+            Ties: 'Ties',
+            Shoes: 'Shoes',
+        };
         
-        // Use the same search filtering as the customer grid for consistency
-        const filteredForAdmin = searchTerm.trim() === ''
-            ? products
-            : products.filter(p =>
-                p.name.toLowerCase().includes(searchTerm) ||
-                p.brand.toLowerCase().includes(searchTerm) ||
-                p.fabric.toLowerCase().includes(searchTerm) ||
-                p.color.toLowerCase().includes(searchTerm)
-            );
-
-        if (filteredForAdmin.length === 0) {
-            adminInventoryBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No items found.</td></tr>`;
-            return;
-        }
-
-        filteredForAdmin.forEach(product => {
-            const rowHTML = `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="h-10 w-10 flex-shrink-0">
-                                <img class="h-10 w-10 rounded-full object-cover" src="${product.imageUrl}" alt="${product.name}">
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">${product.name}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900">${product.category}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            ${product.brand}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <button data-id="${product.id}" class="admin-edit-btn text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition-colors" title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                        </button>
-                        <button data-id="${product.id}" class="admin-delete-btn text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition-colors" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            adminInventoryBody.insertAdjacentHTML('beforeend', rowHTML);
-        });
-    }
-
-    const renderCategories = () => {
-        categoryList.innerHTML = '';
-        const categories = ['All', ...Object.values(Category)];
-        categories.forEach(category => {
-            const li = document.createElement('li');
-            const button = document.createElement('button');
-            const isActive = selectedCategory === category;
-            
-            button.textContent = category;
-            button.className = `w-full text-left px-3 py-2 rounded-md transition-colors duration-200 text-base ${isActive ? 'bg-brand-accent text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
-            
-            button.addEventListener('click', () => {
-                selectedCategory = category;
-                updateUI();
-            });
-            
-            li.appendChild(button);
-            categoryList.appendChild(li);
-        });
-    };
-    
-    const populateCategorySelect = () => {
-        categorySelect.innerHTML = '';
-        Object.values(Category).forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            categorySelect.appendChild(option);
-        });
-    };
-
-    // --- DATA HANDLING (STATE LOGIC) ---
-    
-    const resetForm = () => {
-        addItemForm.reset();
-        editingProductId = null;
-        productIdInput.value = '';
-        formTitle.textContent = 'Add New Item';
-        formSubmitButton.textContent = 'Add Product';
-        cancelEditButton.classList.add('hidden');
-        deleteItemButton.classList.add('hidden');
-    };
-
-    const startEditing = (productId) => {
-        const productToEdit = products.find(p => p.id === productId);
-        if (!productToEdit) return;
-
-        editingProductId = productId;
-        productIdInput.value = productToEdit.id;
+        // Use a let binding for products so we can reassign it with immutable updates
+        let products = [];
         
-        // Populate form fields
-        const form = addItemForm;
-        form.elements['name'].value = productToEdit.name;
-        form.elements['brand'].value = productToEdit.brand;
-        form.elements['category'].value = productToEdit.category;
-        form.elements['fabric'].value = productToEdit.fabric;
-        form.elements['fabricImageUrl'].value = productToEdit.fabricImageUrl;
-        form.elements['imageUrl'].value = productToEdit.imageUrl;
-        form.elements['size'].value = productToEdit.size;
-        form.elements['color'].value = productToEdit.color;
+        let isLoggedIn = false;
+        let selectedCategory = 'All';
+        let editingProductId = null;
+        let searchTerm = '';
 
-        // Update form UI for editing mode
-        formTitle.textContent = 'Edit Item';
-        formSubmitButton.textContent = 'Save Changes';
-        cancelEditButton.classList.remove('hidden');
-        deleteItemButton.classList.remove('hidden'); // Show delete button in edit mode
-        toggleFormButton.textContent = 'Close Form';
-        
-        // Show form and scroll to it
-        addItemFormContainer.classList.remove('hidden');
-        addItemFormContainer.scrollIntoView({ behavior: 'smooth' });
-    };
-    
-    const handleDelete = (productId) => {
-        const numericId = parseInt(productId, 10);
-        const productToDelete = products.find(p => p.id === numericId);
-        if (!productToDelete) return;
+        // --- DOM ELEMENTS ---
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app-view');
+        const adminPanel = document.getElementById('admin-panel');
+        const loginForm = document.getElementById('login-form');
+        const passwordInput = document.getElementById('password-input');
+        const loginError = document.getElementById('login-error');
+        const logoutButton = document.getElementById('logout-button');
+        const productGrid = document.getElementById('product-grid');
+        const categoryList = document.getElementById('category-list');
+        const toggleFormButton = document.getElementById('toggle-form-button');
+        const addItemFormContainer = document.getElementById('add-item-form-container');
+        const addItemForm = document.getElementById('add-item-form');
+        const categorySelect = document.querySelector('select[name="category"]');
+        const formTitle = document.getElementById('form-title');
+        const formSubmitButton = document.getElementById('form-submit-button');
+        const productIdInput = document.getElementById('product-id-input');
+        const cancelEditButton = document.getElementById('cancel-edit-button');
+        const deleteItemButton = document.getElementById('delete-item-button');
+        const togglePasswordFormButton = document.getElementById('toggle-password-form-button');
+        const changePasswordFormContainer = document.getElementById('change-password-form-container');
+        const changePasswordForm = document.getElementById('change-password-form');
+        const passwordChangeMessage = document.getElementById('password-change-message');
+        const searchInput = document.getElementById('search-input');
+        const adminInventorySection = document.getElementById('admin-inventory-section');
+        const adminInventoryBody = document.getElementById('admin-inventory-body');
+        const imageModal = document.getElementById('image-modal');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const modalProductImage = document.getElementById('modal-product-image');
+        const modalFabricImage = document.getElementById('modal-fabric-image');
+        const downloadDbButton = document.getElementById('download-db-button');
+        const adminInstructions = document.getElementById('admin-instructions');
 
-        if (window.confirm(`Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`)) {
-            // Immutable update: create a new array without the deleted item
-            products = products.filter(p => p.id !== numericId);
-            
-            // If the deleted item was being edited, close the form
-            if (editingProductId === numericId) {
-                handleToggleForm(); // Resets and hides the form
+        // --- ASYNCHRONOUS DATA LOADING ---
+        const loadProducts = async () => {
+            try {
+                const response = await fetch('./products.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                products = data;
+            } catch (error) {
+                console.error("Could not load products:", error);
+                // Fallback to an empty array if the file is missing or corrupt
+                products = [];
+                productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-red-500 font-semibold">Error: Could not load product data. Please check the 'products.json' file.</div>`;
             }
-
-            updateUI(); // Re-render the UI with the new products array
-        }
-    };
-
-    // --- EVENT HANDLERS ---
-
-    const handleShowLogin = () => {
-        appView.classList.add('hidden');
-        loginView.classList.remove('hidden');
-    };
-
-    const handleLogin = (e) => {
-        e.preventDefault();
-        const storedPassword = localStorage.getItem(PASSWORD_STORAGE_key);
-        if (passwordInput.value === storedPassword) {
-            isLoggedIn = true;
-            passwordInput.value = '';
-            loginError.textContent = '';
-            populateCategorySelect(); // Populate form dropdown only on login
-            updateUI();
-        } else {
-            loginError.textContent = 'Invalid password. Please try again.';
-            passwordInput.value = '';
-        }
-    };
-
-    const handleLogout = () => {
-        isLoggedIn = false;
-        // Close any open admin forms upon logout
-        if (!addItemFormContainer.classList.contains('hidden')) {
-            handleToggleForm();
-        }
-        if (!changePasswordFormContainer.classList.contains('hidden')) {
-            handleTogglePasswordForm();
-        }
-        updateUI();
-    };
-    
-    const handleToggleForm = () => {
-        if (!changePasswordFormContainer.classList.contains('hidden')) {
-            handleTogglePasswordForm();
-        }
-        const isHidden = addItemFormContainer.classList.contains('hidden');
-        if (!isHidden) {
-            resetForm(); // Reset form when closing
-        }
-        addItemFormContainer.classList.toggle('hidden');
-        toggleFormButton.textContent = isHidden ? 'Close Form' : 'Add New Item';
-    };
-
-    const handleTogglePasswordForm = () => {
-        if (!addItemFormContainer.classList.contains('hidden')) {
-            handleToggleForm();
-        }
-        const isHidden = changePasswordFormContainer.classList.contains('hidden');
-        if (!isHidden) {
-            changePasswordForm.reset();
-            passwordChangeMessage.textContent = '';
-            passwordChangeMessage.className = 'text-sm h-5';
-        }
-        changePasswordFormContainer.classList.toggle('hidden');
-        togglePasswordFormButton.textContent = isHidden ? 'Close Form' : 'Change Password';
-    };
-
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        
-        const actionType = editingProductId ? "save changes to this item" : "add this new item";
-        if (!window.confirm(`Are you sure you want to ${actionType}?`)) {
-            return;
-        }
-
-        const formData = new FormData(addItemForm);
-        const productData = {
-            name: formData.get('name').toString(),
-            brand: formData.get('brand').toString(),
-            category: formData.get('category').toString(),
-            size: formData.get('size').toString(),
-            color: formData.get('color').toString(),
-            fabric: formData.get('fabric').toString(),
-            imageUrl: formData.get('imageUrl').toString(),
-            fabricImageUrl: formData.get('fabricImageUrl').toString(),
         };
 
-        if (editingProductId) {
-            // Immutable update for editing an item
-            products = products.map(p => 
-                p.id === editingProductId 
-                    ? { ...p, ...productData } 
-                    : p
-            );
-        } else {
-            // Immutable update for adding a new item
-            const newProduct = { id: Date.now(), ...productData };
-            products = [newProduct, ...products];
-        }
-
-        resetForm();
-        addItemFormContainer.classList.add('hidden');
-        toggleFormButton.textContent = 'Add New Item';
-        updateUI();
-    };
-
-    const handleChangePassword = (e) => {
-        e.preventDefault();
-        passwordChangeMessage.textContent = '';
-        passwordChangeMessage.className = 'text-sm h-5';
-        
-        const formData = new FormData(changePasswordForm);
-        const currentPassword = formData.get('currentPassword').toString();
-        const newPassword = formData.get('newPassword').toString();
-        const confirmPassword = formData.get('confirmPassword').toString();
-        const storedPassword = localStorage.getItem(PASSWORD_STORAGE_key);
-
-        if (currentPassword !== storedPassword) {
-            passwordChangeMessage.textContent = 'Current password is incorrect.';
-            passwordChangeMessage.classList.add('text-red-500');
-            return;
-        }
-
-        if (!newPassword || newPassword.length < 6) {
-            passwordChangeMessage.textContent = 'New password must be at least 6 characters long.';
-            passwordChangeMessage.classList.add('text-red-500');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            passwordChangeMessage.textContent = 'New passwords do not match.';
-            passwordChangeMessage.classList.add('text-red-500');
-            return;
-        }
-        
-        localStorage.setItem(PASSWORD_STORAGE_key, newPassword);
-        passwordChangeMessage.textContent = 'Password updated successfully!';
-        passwordChangeMessage.classList.add('text-green-600');
-        
-        setTimeout(() => {
-            handleTogglePasswordForm();
-        }, 2000);
-    };
-
-    const handleSearch = (e) => {
-        searchTerm = e.target.value.toLowerCase();
-        updateUI();
-    };
-
-    const openImageModal = (productId) => {
-        const product = products.find(p => p.id === productId);
-        if (product) {
-            modalProductImage.src = product.imageUrl;
-            modalFabricImage.src = product.fabricImageUrl;
-            imageModal.classList.add('visible');
-        }
-    };
-
-    const closeImageModal = () => {
-        imageModal.classList.remove('visible');
-    };
-
-    const handleAdminShortcut = (e) => {
-        // Ctrl+Shift+A or Cmd+Shift+A
-        if (e.key === 'A' && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault(); // Prevent browser's default action
-            if (!isLoggedIn) {
-                handleShowLogin();
+        const initializePassword = () => {
+            if (!localStorage.getItem(PASSWORD_STORAGE_KEY)) {
+                localStorage.setItem(PASSWORD_STORAGE_KEY, DEFAULT_PASSWORD);
             }
-        }
-    };
+        };
 
+        // --- RENDER FUNCTIONS (UI LOGIC) ---
+        const updateUI = () => {
+            if (isLoggedIn) {
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                adminPanel.classList.remove('hidden');
+                adminInventorySection.classList.remove('hidden');
+                adminInstructions.classList.remove('hidden');
+                logoutButton.classList.remove('hidden');
+            } else {
+                appView.classList.remove('hidden');
+                loginView.classList.add('hidden');
+                adminPanel.classList.add('hidden');
+                adminInventorySection.classList.add('hidden');
+                adminInstructions.classList.add('hidden');
+                logoutButton.classList.add('hidden');
+            }
+            renderCategories();
+            renderCustomerGrid();
+            if (isLoggedIn) {
+                renderAdminTable();
+            }
+        };
 
-    // --- INITIALIZATION & EVENT LISTENERS ---
-    
-    // Set up the initial state of the application
-    initializePassword();
+        const renderCustomerGrid = () => {
+            productGrid.innerHTML = '';
+            const categoryFilteredProducts = selectedCategory === 'All' ? products : products.filter(p => p.category === selectedCategory);
+            const finalFilteredProducts = searchTerm.trim() === '' ? categoryFilteredProducts : categoryFilteredProducts.filter(p =>
+                p.name.toLowerCase().includes(searchTerm) ||
+                p.brand.toLowerCase().includes(searchTerm) ||
+                p.fabric.toLowerCase().includes(searchTerm) ||
+                p.color.toLowerCase().includes(searchTerm)
+            );
+            if (finalFilteredProducts.length === 0) {
+                productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">No items found.</div>`;
+            } else {
+                finalFilteredProducts.forEach(product => {
+                    const productCardHTML = `
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-2xl group">
+                            <div class="relative product-image-container cursor-pointer" data-id="${product.id}">
+                                <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-80 object-cover" />
+                                <div class="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all duration-300"></div>
+                                <span class="absolute top-3 right-3 bg-brand-accent text-white text-xs font-bold px-2 py-1 rounded-full">${product.category}</span>
+                            </div>
+                            <div class="p-5">
+                                <h3 class="text-xl font-bold text-brand-primary mb-2 truncate">${product.name}</h3>
+                                <div class="space-y-2 text-sm text-gray-600">
+                                    <p><span class="font-semibold">Brand:</span> ${product.brand}</p>
+                                    <p class="flex items-center"><span class="font-semibold">Fabric:</span> <span class="ml-1">${product.fabric}</span><img src="${product.fabricImageUrl}" alt="${product.fabric} swatch" class="fabric-swatch"></p>
+                                    <p><span class="font-semibold">Color:</span> ${product.color}</p>
+                                    <p><span class="font-semibold">Size:</span> ${product.size}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                    productGrid.insertAdjacentHTML('beforeend', productCardHTML);
+                });
+            }
+        };
 
-    // Attach all event listeners
-    loginForm.addEventListener('submit', handleLogin);
-    logoutButton.addEventListener('click', handleLogout);
-    toggleFormButton.addEventListener('click', handleToggleForm);
-    addItemForm.addEventListener('submit', handleFormSubmit);
-    cancelEditButton.addEventListener('click', handleToggleForm);
-    deleteItemButton.addEventListener('click', () => handleDelete(editingProductId)); // Pass current editing ID
-    togglePasswordFormButton.addEventListener('click', handleTogglePasswordForm);
-    changePasswordForm.addEventListener('submit', handleChangePassword);
-    searchInput.addEventListener('input', handleSearch);
-    document.addEventListener('keydown', handleAdminShortcut);
+        const renderAdminTable = () => {
+            adminInventoryBody.innerHTML = '';
+            const filteredForAdmin = searchTerm.trim() === '' ? products : products.filter(p =>
+                p.name.toLowerCase().includes(searchTerm) ||
+                p.brand.toLowerCase().includes(searchTerm) ||
+                p.fabric.toLowerCase().includes(searchTerm) ||
+                p.color.toLowerCase().includes(searchTerm)
+            );
+            if (filteredForAdmin.length === 0) {
+                adminInventoryBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No items found.</td></tr>`;
+                return;
+            }
+            filteredForAdmin.forEach(product => {
+                const rowHTML = `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="h-10 w-10 flex-shrink-0"><img class="h-10 w-10 rounded-full object-cover" src="${product.imageUrl}" alt="${product.name}"></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">${product.name}</div></div></div></td>
+                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${product.category}</div></td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">${product.brand}</span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <button data-id="${product.id}" class="admin-edit-btn text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition-colors" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                            <button data-id="${product.id}" class="admin-delete-btn text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition-colors" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="pointer-events: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </td>
+                    </tr>`;
+                adminInventoryBody.insertAdjacentHTML('beforeend', rowHTML);
+            });
+        };
 
-    // Use event delegation for dynamically created elements
-    adminInventoryBody.addEventListener('click', (e) => {
-        const target = e.target;
+        const renderCategories = () => {
+            categoryList.innerHTML = '';
+            const categories = ['All', ...Object.values(Category)];
+            categories.forEach(category => {
+                const li = document.createElement('li');
+                const button = document.createElement('button');
+                const isActive = selectedCategory === category;
+                button.textContent = category;
+                button.className = `w-full text-left px-3 py-2 rounded-md transition-colors duration-200 text-base ${isActive ? 'bg-brand-accent text-white font-semibold' : 'text-gray-700 hover:bg-gray-100'}`;
+                button.addEventListener('click', () => {
+                    selectedCategory = category;
+                    updateUI();
+                });
+                li.appendChild(button);
+                categoryList.appendChild(li);
+            });
+        };
+
+        const populateCategorySelect = () => {
+            categorySelect.innerHTML = '';
+            Object.values(Category).forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categorySelect.appendChild(option);
+            });
+        };
+
+        // --- DATA HANDLING (STATE LOGIC) ---
+        const resetForm = () => {
+            addItemForm.reset();
+            editingProductId = null;
+            productIdInput.value = '';
+            formTitle.textContent = 'Add New Item';
+            formSubmitButton.textContent = 'Add Product';
+            cancelEditButton.classList.add('hidden');
+            deleteItemButton.classList.add('hidden');
+        };
+
+        const startEditing = (productId) => {
+            const productToEdit = products.find(p => p.id === productId);
+            if (!productToEdit) return;
+            editingProductId = productId;
+            productIdInput.value = productToEdit.id;
+            const form = addItemForm;
+            form.elements['name'].value = productToEdit.name;
+            form.elements['brand'].value = productToEdit.brand;
+            form.elements['category'].value = productToEdit.category;
+            form.elements['fabric'].value = productToEdit.fabric;
+            form.elements['fabricImageUrl'].value = productToEdit.fabricImageUrl;
+            form.elements['imageUrl'].value = productToEdit.imageUrl;
+            form.elements['size'].value = productToEdit.size;
+            form.elements['color'].value = productToEdit.color;
+            formTitle.textContent = 'Edit Item';
+            formSubmitButton.textContent = 'Save Changes';
+            cancelEditButton.classList.remove('hidden');
+            deleteItemButton.classList.remove('hidden');
+            toggleFormButton.textContent = 'Close Form';
+            addItemFormContainer.classList.remove('hidden');
+            addItemFormContainer.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        const handleDelete = (productId) => {
+            const numericId = parseInt(productId, 10);
+            const productToDelete = products.find(p => p.id === numericId);
+            if (!productToDelete) return;
+            if (window.confirm(`Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`)) {
+                products = products.filter(p => p.id !== numericId);
+                if (editingProductId === numericId) {
+                    handleToggleForm();
+                }
+                updateUI();
+            }
+        };
         
-        const editBtn = target.closest('.admin-edit-btn');
-        if (editBtn) {
-            const id = parseInt(editBtn.dataset.id, 10);
-            startEditing(id);
-            return;
-        }
+        const handleDownloadDatabase = () => {
+            const dataStr = JSON.stringify(products, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'products.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        };
 
-        const deleteBtn = target.closest('.admin-delete-btn');
-        if (deleteBtn) {
-            const id = parseInt(deleteBtn.dataset.id, 10);
-            handleDelete(id);
-        }
+        // --- EVENT HANDLERS ---
+        const handleShowLogin = () => {
+            appView.classList.add('hidden');
+            loginView.classList.remove('hidden');
+        };
+
+        const handleLogin = (e) => {
+            e.preventDefault();
+            const storedPassword = localStorage.getItem(PASSWORD_STORAGE_KEY);
+            if (passwordInput.value === storedPassword) {
+                isLoggedIn = true;
+                passwordInput.value = '';
+                loginError.textContent = '';
+                populateCategorySelect();
+                updateUI();
+            } else {
+                loginError.textContent = 'Invalid password. Please try again.';
+                passwordInput.value = '';
+            }
+        };
+
+        const handleLogout = () => {
+            isLoggedIn = false;
+            if (!addItemFormContainer.classList.contains('hidden')) handleToggleForm();
+            if (!changePasswordFormContainer.classList.contains('hidden')) handleTogglePasswordForm();
+            updateUI();
+        };
+
+        const handleToggleForm = () => {
+            if (!changePasswordFormContainer.classList.contains('hidden')) handleTogglePasswordForm();
+            const isHidden = addItemFormContainer.classList.contains('hidden');
+            if (!isHidden) resetForm();
+            addItemFormContainer.classList.toggle('hidden');
+            toggleFormButton.textContent = isHidden ? 'Close Form' : 'Add New Item';
+        };
+
+        const handleTogglePasswordForm = () => {
+            if (!addItemFormContainer.classList.contains('hidden')) handleToggleForm();
+            const isHidden = changePasswordFormContainer.classList.contains('hidden');
+            if (!isHidden) {
+                changePasswordForm.reset();
+                passwordChangeMessage.textContent = '';
+                passwordChangeMessage.className = 'text-sm h-5';
+            }
+            changePasswordFormContainer.classList.toggle('hidden');
+            togglePasswordFormButton.textContent = isHidden ? 'Close Form' : 'Change Password';
+        };
+
+        const handleFormSubmit = (e) => {
+            e.preventDefault();
+            const actionType = editingProductId ? "save changes to this item" : "add this new item";
+            if (!window.confirm(`Are you sure you want to ${actionType}?`)) return;
+            const formData = new FormData(addItemForm);
+            const productData = {
+                name: formData.get('name').toString(), brand: formData.get('brand').toString(), category: formData.get('category').toString(),
+                size: formData.get('size').toString(), color: formData.get('color').toString(), fabric: formData.get('fabric').toString(),
+                imageUrl: formData.get('imageUrl').toString(), fabricImageUrl: formData.get('fabricImageUrl').toString(),
+            };
+            if (editingProductId) {
+                products = products.map(p => p.id === editingProductId ? { ...p, ...productData } : p);
+            } else {
+                const newProduct = { id: Date.now(), ...productData };
+                products = [newProduct, ...products];
+            }
+            resetForm();
+            addItemFormContainer.classList.add('hidden');
+            toggleFormButton.textContent = 'Add New Item';
+            updateUI();
+        };
+
+        const handleChangePassword = (e) => {
+            e.preventDefault();
+            passwordChangeMessage.textContent = '';
+            passwordChangeMessage.className = 'text-sm h-5';
+            const formData = new FormData(changePasswordForm);
+            const currentPassword = formData.get('currentPassword').toString();
+            const newPassword = formData.get('newPassword').toString();
+            const confirmPassword = formData.get('confirmPassword').toString();
+            const storedPassword = localStorage.getItem(PASSWORD_STORAGE_KEY);
+            if (currentPassword !== storedPassword) {
+                passwordChangeMessage.textContent = 'Current password is incorrect.';
+                passwordChangeMessage.classList.add('text-red-500');
+                return;
+            }
+            if (!newPassword || newPassword.length < 6) {
+                passwordChangeMessage.textContent = 'New password must be at least 6 characters long.';
+                passwordChangeMessage.classList.add('text-red-500');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                passwordChangeMessage.textContent = 'New passwords do not match.';
+                passwordChangeMessage.classList.add('text-red-500');
+                return;
+            }
+            localStorage.setItem(PASSWORD_STORAGE_KEY, newPassword);
+            passwordChangeMessage.textContent = 'Password updated successfully!';
+            passwordChangeMessage.classList.add('text-green-600');
+            setTimeout(() => { handleTogglePasswordForm(); }, 2000);
+        };
+
+        const handleSearch = (e) => {
+            searchTerm = e.target.value.toLowerCase();
+            updateUI();
+        };
+
+        const openImageModal = (productId) => {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                modalProductImage.src = product.imageUrl;
+                modalFabricImage.src = product.fabricImageUrl;
+                imageModal.classList.add('visible');
+            }
+        };
+
+        const closeImageModal = () => { imageModal.classList.remove('visible'); };
+        const handleAdminShortcut = (e) => { if (e.key === 'A' && e.shiftKey && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (!isLoggedIn) handleShowLogin(); } };
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        initializePassword();
+        await loadProducts(); // Load data before rendering
+
+        loginForm.addEventListener('submit', handleLogin);
+        logoutButton.addEventListener('click', handleLogout);
+        toggleFormButton.addEventListener('click', handleToggleForm);
+        addItemForm.addEventListener('submit', handleFormSubmit);
+        cancelEditButton.addEventListener('click', handleToggleForm);
+        deleteItemButton.addEventListener('click', () => handleDelete(editingProductId));
+        togglePasswordFormButton.addEventListener('click', handleTogglePasswordForm);
+        changePasswordForm.addEventListener('submit', handleChangePassword);
+        searchInput.addEventListener('input', handleSearch);
+        downloadDbButton.addEventListener('click', handleDownloadDatabase);
+        document.addEventListener('keydown', handleAdminShortcut);
+
+        adminInventoryBody.addEventListener('click', (e) => {
+            const target = e.target;
+            const editBtn = target.closest('.admin-edit-btn');
+            if (editBtn) { const id = parseInt(editBtn.dataset.id, 10); startEditing(id); return; }
+            const deleteBtn = target.closest('.admin-delete-btn');
+            if (deleteBtn) { const id = parseInt(deleteBtn.dataset.id, 10); handleDelete(id); }
+        });
+        productGrid.addEventListener('click', (e) => {
+            const imageContainer = e.target.closest('.product-image-container');
+            if (imageContainer) { const id = parseInt(imageContainer.dataset.id, 10); openImageModal(id); }
+        });
+        modalCloseButton.addEventListener('click', closeImageModal);
+        imageModal.addEventListener('click', (e) => { if (e.target === imageModal) closeImageModal(); });
+
+        updateUI(); // Initial render of the application
     });
-
-    productGrid.addEventListener('click', (e) => {
-        const imageContainer = e.target.closest('.product-image-container');
-        if (imageContainer) {
-            const id = parseInt(imageContainer.dataset.id, 10);
-            openImageModal(id);
-        }
-    });
-
-    modalCloseButton.addEventListener('click', closeImageModal);
-    imageModal.addEventListener('click', (e) => {
-        // Close if clicking on the overlay itself, not the content
-        if (e.target === imageModal) {
-            closeImageModal();
-        }
-    });
-
-    // Initial render of the application
-    updateUI();
-});
     </script>
 </body>
 </html>

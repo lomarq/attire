@@ -1,0 +1,91 @@
+
+[
+  {
+    "id": 1,
+    "name": "Classic Navy Blazer",
+    "brand": "Prestige Wear",
+    "category": "Suit Jackets",
+    "size": "40R",
+    "color": "Navy",
+    "fabric": "Wool",
+    "imageUrl": "https://picsum.photos/seed/jacket1/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/wool/50/50"
+  },
+  {
+    "id": 2,
+    "name": "Slim Fit Chinos",
+    "brand": "Urban Threads",
+    "category": "Pants",
+    "size": "32x32",
+    "color": "Khaki",
+    "fabric": "Cotton Twill",
+    "imageUrl": "https://picsum.photos/seed/pants1/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/twill/50/50"
+  },
+  {
+    "id": 3,
+    "name": "Oxford Button-Down",
+    "brand": "Gentleman's Choice",
+    "category": "Shirts",
+    "size": "M",
+    "color": "White",
+    "fabric": "Oxford Cotton",
+    "imageUrl": "https://picsum.photos/seed/shirt1/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/oxford/50/50"
+  },
+  {
+    "id": 4,
+    "name": "Leather Wingtip Oxfords",
+    "brand": "Walk London",
+    "category": "Shoes",
+    "size": "10",
+    "color": "Brown",
+    "fabric": "Full-grain Leather",
+    "imageUrl": "https://picsum.photos/seed/shoes1/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/leather/50/50"
+  },
+  {
+    "id": 5,
+    "name": "Silk Striped Tie",
+    "brand": "Luxe Loom",
+    "category": "Ties",
+    "size": "One Size",
+    "color": "Red/Blue Stripe",
+    "fabric": "Silk",
+    "imageUrl": "https://picsum.photos/seed/tie1/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/silk/50/50"
+  },
+  {
+    "id": 6,
+    "name": "Tweed Sport Coat",
+    "brand": "Country Squire",
+    "category": "Suit Jackets",
+    "size": "42R",
+    "color": "Brown Herringbone",
+    "fabric": "Wool Tweed",
+    "imageUrl": "https://picsum.photos/seed/jacket2/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/tweed/50/50"
+  },
+  {
+    "id": 7,
+    "name": "Wool Flannel Trousers",
+    "brand": "Prestige Wear",
+    "category": "Pants",
+    "size": "34x32",
+    "color": "Grey",
+    "fabric": "Wool Flannel",
+    "imageUrl": "https://picsum.photos/seed/pants2/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/flannel/50/50"
+  },
+  {
+    "id": 8,
+    "name": "Linen Casual Shirt",
+    "brand": "Urban Threads",
+    "category": "Shirts",
+    "size": "L",
+    "color": "Natural",
+    "fabric": "Linen",
+    "imageUrl": "https://picsum.photos/seed/shirt2/600/800",
+    "fabricImageUrl": "https://picsum.photos/seed/linen/50/50"
+  }
+]
