@@ -2,6 +2,7 @@
 [
   {
     "id": 1,
+    "uniqueNumber": 1,
     "name": "Classic Navy Blazer",
     "brand": "Prestige Wear",
     "category": "Suit Jackets",
@@ -13,6 +14,7 @@
   },
   {
     "id": 2,
+    "uniqueNumber": 2,
     "name": "Slim Fit Chinos",
     "brand": "Urban Threads",
     "category": "Pants",
@@ -24,6 +26,7 @@
   },
   {
     "id": 3,
+    "uniqueNumber": 3,
     "name": "Oxford Button-Down",
     "brand": "Gentleman's Choice",
     "category": "Shirts",
@@ -35,6 +38,7 @@
   },
   {
     "id": 4,
+    "uniqueNumber": 4,
     "name": "Leather Wingtip Oxfords",
     "brand": "Walk London",
     "category": "Shoes",
@@ -46,6 +50,7 @@
   },
   {
     "id": 5,
+    "uniqueNumber": 5,
     "name": "Silk Striped Tie",
     "brand": "Luxe Loom",
     "category": "Ties",
@@ -57,6 +62,7 @@
   },
   {
     "id": 6,
+    "uniqueNumber": 6,
     "name": "Tweed Sport Coat",
     "brand": "Country Squire",
     "category": "Suit Jackets",
@@ -68,6 +74,7 @@
   },
   {
     "id": 7,
+    "uniqueNumber": 7,
     "name": "Wool Flannel Trousers",
     "brand": "Prestige Wear",
     "category": "Pants",
@@ -79,6 +86,7 @@
   },
   {
     "id": 8,
+    "uniqueNumber": 8,
     "name": "Linen Casual Shirt",
     "brand": "Urban Threads",
     "category": "Shirts",

@@ -255,6 +255,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item #</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
@@ -283,7 +284,7 @@
             <div class="mt-2 pt-8">
                 <h2 class="text-3xl font-bold text-center text-brand-primary mb-4">Product Catalog</h2>
                 <div class="mb-8 max-w-2xl mx-auto">
-                    <input id="search-input" type="search" placeholder="Search by name, brand, fabric, color..." class="w-full px-4 py-3 text-lg text-gray-800 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent">
+                    <input id="search-input" type="search" placeholder="Search by name, item #, brand, fabric, color..." class="w-full px-4 py-3 text-lg text-gray-800 placeholder-gray-500 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent">
                 </div>
                 <div class="flex flex-col md:flex-row gap-8">
                     <!-- Category Filter -->
@@ -310,7 +311,7 @@
             <div class="modal-content">
                 <span id="modal-close-button" class="modal-close">&times;</span>
                 <div class="modal-image-container">
-                     <h4 class="text-lg font-bold mb-2">Product</h4>
+                     <h4 id="modal-product-title" class="text-lg font-bold mb-2">Product</h4>
                     <img id="modal-product-image" src="" alt="Product Image" class="modal-image">
                 </div>
                 <div class="modal-image-container">
@@ -388,6 +389,7 @@
         const modalCloseButton = document.getElementById('modal-close-button');
         const modalProductImage = document.getElementById('modal-product-image');
         const modalFabricImage = document.getElementById('modal-fabric-image');
+        const modalProductTitle = document.getElementById('modal-product-title');
         const downloadDbButton = document.getElementById('download-db-button');
         const adminInstructions = document.getElementById('admin-instructions');
 
@@ -412,6 +414,16 @@
             if (!localStorage.getItem(PASSWORD_STORAGE_KEY)) {
                 localStorage.setItem(PASSWORD_STORAGE_KEY, DEFAULT_PASSWORD);
             }
+        };
+
+        // --- HELPER FUNCTIONS ---
+        const getNextUniqueNumber = (currentProducts) => {
+            const existingNumbers = new Set(currentProducts.map(p => p.uniqueNumber).filter(n => typeof n === 'number'));
+            let candidate = 1;
+            while (existingNumbers.has(candidate)) {
+                candidate++;
+            }
+            return candidate;
         };
 
         // --- RENDER FUNCTIONS (UI LOGIC) ---
@@ -443,6 +455,7 @@
             const categoryFilteredProducts = selectedCategory === 'All' ? products : products.filter(p => p.category === selectedCategory);
             const finalFilteredProducts = searchTerm.trim() === '' ? categoryFilteredProducts : categoryFilteredProducts.filter(p =>
                 p.name.toLowerCase().includes(searchTerm) ||
+                (p.uniqueNumber && p.uniqueNumber.toString().includes(searchTerm)) ||
                 p.brand.toLowerCase().includes(searchTerm) ||
                 p.fabric.toLowerCase().includes(searchTerm) ||
                 p.color.toLowerCase().includes(searchTerm)
@@ -451,6 +464,7 @@
                 productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">No items found.</div>`;
             } else {
                 finalFilteredProducts.forEach(product => {
+                    const uniqueNumDisplay = product.uniqueNumber ? `<span class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded ml-2">#${product.uniqueNumber}</span>` : '';
                     const productCardHTML = `
                         <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-2xl group">
                             <div class="relative product-image-container cursor-pointer" data-id="${product.id}">
@@ -459,7 +473,10 @@
                                 <span class="absolute top-3 right-3 bg-brand-accent text-white text-xs font-bold px-2 py-1 rounded-full">${product.category}</span>
                             </div>
                             <div class="p-5">
-                                <h3 class="text-xl font-bold text-brand-primary mb-2 truncate">${product.name}</h3>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-xl font-bold text-brand-primary truncate flex-1">${product.name}</h3>
+                                    ${uniqueNumDisplay}
+                                </div>
                                 <div class="space-y-2 text-sm text-gray-600">
                                     <p><span class="font-semibold">Brand:</span> ${product.brand}</p>
                                     <p class="flex items-center"><span class="font-semibold">Fabric:</span> <span class="ml-1">${product.fabric}</span><img src="${product.fabricImageUrl}" alt="${product.fabric} swatch" class="fabric-swatch"></p>
@@ -477,17 +494,20 @@
             adminInventoryBody.innerHTML = '';
             const filteredForAdmin = searchTerm.trim() === '' ? products : products.filter(p =>
                 p.name.toLowerCase().includes(searchTerm) ||
+                (p.uniqueNumber && p.uniqueNumber.toString().includes(searchTerm)) ||
                 p.brand.toLowerCase().includes(searchTerm) ||
                 p.fabric.toLowerCase().includes(searchTerm) ||
                 p.color.toLowerCase().includes(searchTerm)
             );
             if (filteredForAdmin.length === 0) {
-                adminInventoryBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No items found.</td></tr>`;
+                adminInventoryBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No items found.</td></tr>`;
                 return;
             }
             filteredForAdmin.forEach(product => {
+                const uniqueNum = product.uniqueNumber ? `#${product.uniqueNumber}` : '-';
                 const rowHTML = `
                     <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${uniqueNum}</td>
                         <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="h-10 w-10 flex-shrink-0"><img class="h-10 w-10 rounded-full object-cover" src="${product.imageUrl}" alt="${product.name}"></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">${product.name}</div></div></div></td>
                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${product.category}</div></td>
                         <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">${product.brand}</span></td>
@@ -646,12 +666,17 @@
                 size: formData.get('size').toString(), color: formData.get('color').toString(), fabric: formData.get('fabric').toString(),
                 imageUrl: formData.get('imageUrl').toString(), fabricImageUrl: formData.get('fabricImageUrl').toString(),
             };
+            
             if (editingProductId) {
-                products = products.map(p => p.id === editingProductId ? { ...p, ...productData } : p);
+                // Keep the existing uniqueNumber when editing
+                products = products.map(p => p.id === editingProductId ? { ...p, ...productData, uniqueNumber: p.uniqueNumber } : p);
             } else {
-                const newProduct = { id: Date.now(), ...productData };
+                // Assign a new unique number for new products
+                const uniqueNumber = getNextUniqueNumber(products);
+                const newProduct = { id: Date.now(), uniqueNumber, ...productData };
                 products = [newProduct, ...products];
             }
+            
             resetForm();
             addItemFormContainer.classList.add('hidden');
             toggleFormButton.textContent = 'Add New Item';
@@ -698,6 +723,8 @@
             if (product) {
                 modalProductImage.src = product.imageUrl;
                 modalFabricImage.src = product.fabricImageUrl;
+                const uniqueNumText = product.uniqueNumber ? ` #${product.uniqueNumber}` : '';
+                modalProductTitle.textContent = `Product: ${product.name}${uniqueNumText}`;
                 imageModal.classList.add('visible');
             }
         };
