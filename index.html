@@ -315,7 +315,9 @@
                     <ol class="list-decimal list-inside space-y-1 font-light">
                         <li>Modify collection in browser.</li>
                         <li>Download <code class="bg-gray-200 px-1">products.json</code>.</li>
-                        <li>Replace file in source & commit to GitHub.</li>
+                        <li>Copy the content of the downloaded file.</li>
+                        <li>Replace the <code class="bg-gray-200 px-1">initialProducts</code> array in <code class="bg-gray-200 px-1">index.html</code>.</li>
+                        <li>Commit the changes.</li>
                     </ol>
                 </div>
 
@@ -390,7 +392,7 @@
 
     <script>
     // --- APP INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         
         // --- DATA & STATE ---
         const PASSWORD_STORAGE_KEY = 'elegant_attire_admin_password';
@@ -404,8 +406,115 @@
             Shoes: 'Shoes',
         };
         
+        const initialProducts = [
+          {
+            "id": 1,
+            "uniqueNumber": 1,
+            "name": "Classic Navy Blazer",
+            "brand": "Prestige Wear",
+            "category": "Suit Jackets",
+            "size": "40R",
+            "color": "Navy",
+            "fabric": "Wool",
+            "quantity": 5,
+            "imageUrl": "https://picsum.photos/seed/jacket1/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/wool/50/50"
+          },
+          {
+            "id": 2,
+            "uniqueNumber": 2,
+            "name": "Slim Fit Chinos",
+            "brand": "Urban Threads",
+            "category": "Pants",
+            "size": "32x32",
+            "color": "Khaki",
+            "fabric": "Cotton Twill",
+            "quantity": 12,
+            "imageUrl": "https://picsum.photos/seed/pants1/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/twill/50/50"
+          },
+          {
+            "id": 3,
+            "uniqueNumber": 3,
+            "name": "Oxford Button-Down",
+            "brand": "Gentleman's Choice",
+            "category": "Shirts",
+            "size": "M",
+            "color": "White",
+            "fabric": "Oxford Cotton",
+            "quantity": 8,
+            "imageUrl": "https://picsum.photos/seed/shirt1/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/oxford/50/50"
+          },
+          {
+            "id": 4,
+            "uniqueNumber": 4,
+            "name": "Leather Wingtip Oxfords",
+            "brand": "Walk London",
+            "category": "Shoes",
+            "size": "10",
+            "color": "Brown",
+            "fabric": "Full-grain Leather",
+            "quantity": 3,
+            "imageUrl": "https://picsum.photos/seed/shoes1/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/leather/50/50"
+          },
+          {
+            "id": 5,
+            "uniqueNumber": 5,
+            "name": "Silk Striped Tie",
+            "brand": "Luxe Loom",
+            "category": "Ties",
+            "size": "One Size",
+            "color": "Red/Blue Stripe",
+            "fabric": "Silk",
+            "quantity": 15,
+            "imageUrl": "https://picsum.photos/seed/tie1/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/silk/50/50"
+          },
+          {
+            "id": 6,
+            "uniqueNumber": 6,
+            "name": "Tweed Sport Coat",
+            "brand": "Country Squire",
+            "category": "Suit Jackets",
+            "size": "42R",
+            "color": "Brown Herringbone",
+            "fabric": "Wool Tweed",
+            "quantity": 2,
+            "imageUrl": "https://picsum.photos/seed/jacket2/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/tweed/50/50"
+          },
+          {
+            "id": 7,
+            "uniqueNumber": 7,
+            "name": "Wool Flannel Trousers",
+            "brand": "Prestige Wear",
+            "category": "Pants",
+            "size": "34x32",
+            "color": "Grey",
+            "fabric": "Wool Flannel",
+            "quantity": 6,
+            "imageUrl": "https://picsum.photos/seed/pants2/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/flannel/50/50"
+          },
+          {
+            "id": 8,
+            "uniqueNumber": 8,
+            "name": "Linen Casual Shirt",
+            "brand": "Urban Threads",
+            "category": "Shirts",
+            "size": "L",
+            "color": "Natural",
+            "fabric": "Linen",
+            "quantity": 10,
+            "imageUrl": "https://picsum.photos/seed/shirt2/600/800",
+            "fabricImageUrl": "https://picsum.photos/seed/linen/50/50"
+          }
+        ];
+
         // Use a let binding for products so we can reassign it with immutable updates
-        let products = [];
+        let products = initialProducts.map(p => ({ ...p, quantity: p.quantity !== undefined ? p.quantity : 1 }));
         
         let isLoggedIn = false;
         let selectedCategory = 'All';
@@ -446,23 +555,6 @@
         const modalProductQty = document.getElementById('modal-product-qty');
         const downloadDbButton = document.getElementById('download-db-button');
         const adminInstructions = document.getElementById('admin-instructions');
-
-        // --- ASYNCHRONOUS DATA LOADING ---
-        const loadProducts = async () => {
-            try {
-                const response = await fetch('./products.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                // Ensure quantity exists for older data
-                products = data.map(p => ({ ...p, quantity: p.quantity !== undefined ? p.quantity : 1 }));
-            } catch (error) {
-                console.error("Could not load products:", error);
-                products = [];
-                productGrid.innerHTML = `<div class="col-span-full text-center py-10 text-brand-accent font-display italic text-xl">The catalog is currently unavailable.</div>`;
-            }
-        };
 
         const initializePassword = () => {
             if (!localStorage.getItem(PASSWORD_STORAGE_KEY)) {
@@ -823,8 +915,7 @@
 
         // --- INITIALIZATION & EVENT LISTENERS ---
         initializePassword();
-        await loadProducts(); // Load data before rendering
-
+        
         loginForm.addEventListener('submit', handleLogin);
         logoutButton.addEventListener('click', handleLogout);
         toggleFormButton.addEventListener('click', handleToggleForm);
